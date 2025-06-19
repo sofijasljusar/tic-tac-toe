@@ -1,3 +1,4 @@
+import random
 
 winning_states = [
     [(0, 0), (1, 1), (2, 2)],
@@ -9,6 +10,7 @@ winning_states = [
     [(1, 0), (1, 1), (1, 2)],
     [(2, 0), (2, 1), (2, 2)]
 ]
+players = ["X", "O"]
 
 
 board = [['-', '-', '-'],
@@ -23,20 +25,12 @@ def is_victory(current_state):
                 == current_state[state[2][0]][state[2][1]]):
             print("X won!")
             return True
-        elif ('0' == current_state[state[0][0]][state[0][1]]
+        elif ('O' == current_state[state[0][0]][state[0][1]]
                   == current_state[state[1][0]][state[1][1]]
                   == current_state[state[2][0]][state[2][1]]):
-            print("0 won!")
+            print("O won!")
             return True
     return False
-
-
-# def game_continues(current_state):
-#     for current_row in current_state:
-#         for position in current_row:
-#             if position == '-':
-#                 return False
-#     return False
 
 
 def move_is_valid(x, y):
@@ -50,7 +44,7 @@ def move_is_valid(x, y):
         return True
 
 
-def make_move(mark):
+def get_human_move(mark):
     valid_move_made = False
     while not valid_move_made:
         try:
@@ -63,13 +57,34 @@ def make_move(mark):
             print("Please enter a valid number!")
 
 
-iteration = 0
+def get_available_moves(current_state):
+    positions = []
+    for i in range(3):
+        for j in range(3):
+            if current_state[i][j] == '-':
+                positions.append((i, j))
+    return positions
 
+
+def get_random_move(mark):
+    selected_move = random.choice(get_available_moves(board))
+    board[selected_move[0]][selected_move[1]] = mark
+
+
+print("The Game of Tic-Tac-Toe")
+player = random.choice(players)
+
+iteration = 0
 while iteration < 9:
     iteration += 1
-    player = 'X' if iteration % 2 == 1 else '0'
     print(f"Player {player} move...")
-    make_move(player)
+    if player == "X":
+        get_random_move(player)
+    else:
+        get_human_move(player)
+
+    player = 'O' if player == 'X' else 'X'
+
     for line in board:
         print(' '.join(line))
     if is_victory(board):
