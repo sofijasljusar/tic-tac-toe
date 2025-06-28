@@ -336,7 +336,7 @@ while count < max_episodes:
         if len(actions_dict) == 0:
             max_value = 0.0
         else:
-            action, max_value = max(actions_dict.items(), key=lambda  x: x[1])
+            action, max_value = max(actions_dict.items(), key=lambda x: x[1])
         q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward + discount_factor*max_value - q_values[last_state][(row, col)])
 
         to_move = "X"
