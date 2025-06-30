@@ -42,17 +42,17 @@ def move_is_valid(x, y):
         return True
 
 
-def get_human_move(mark):
+def get_human_move():
     valid_move_made = False
     while not valid_move_made:
         try:
             row = int(input("Select row (1-3): ")) - 1
             column = int(input("Select column (1-3): ")) - 1
             if move_is_valid(row, column):
-                board[row][column] = mark
                 valid_move_made = True
         except ValueError:
             print("Please enter a valid number!")
+    return (row, column)
 
 
 def get_available_moves(current_state):
@@ -64,73 +64,80 @@ def get_available_moves(current_state):
     return positions
 
 
-def get_random_move(mark):
+def get_random_move():
     selected_move = random.choice(get_available_moves(board))
-    board[selected_move[0]][selected_move[1]] = mark
+    return selected_move
 
 
-def get_calculated_move(state, mark):
+def get_calculated_move(state):
+    selected_move = None
+    available_moves = get_available_moves(state)
     dictionary_state = tuple(tuple(row) for row in state)
     if dictionary_state not in q_table:
-        print("Need to add state to table!")
-        print("...with what value?")
-    best_q = float('-inf')
-    selected_move = None
-    for state in q_table:
-        print(state)
-        for action, q in q_table[state].items():
+        print("Adding state:", dictionary_state)
+        for action in available_moves:
+            q_table[dictionary_state][action] = 0.0
+        selected_move = get_random_move()
+        print(f"Making random move: {selected_move}")
+    else:
+        best_q = float('-inf')
+        for action, q in q_table[dictionary_state].items():
             print(action)
             if q > best_q:
                 best_q = q
                 selected_move = action
-    print(f"Top Q-Value: {best_q}")
-    print(f"Best move: {selected_move}")
-    board[selected_move[0]][selected_move[1]] = mark
-
-# for epoch in range(epochs):
-#     board = [['-', '-', '-'],
-#              ['-', '-', '-'],
-#              ['-', '-', '-']]
-#
-#     print("The Game of Tic-Tac-Toe")
-#     first_player = random.choice(players)
-#
-#
-#     def game(player=first_player):
-#         iteration = 0
-#         while iteration < 9:
-#             iteration += 1
-#             print(f"Player {player} move...")
-#             if player == "X":
-#                 get_random_move(player)
-#             else:
-#                 get_human_move(player)
-#
-#             player = 'O' if player == 'X' else 'X'
-#
-#             for line in board:
-#                 print(' '.join(line))
-#             if is_victory(board):
-#                 iteration = 10
-#             if iteration == 9:
-#                 print("It's a draw!")
-#         print("Game over!")
-#
-#     game(first_player)
+        print(f"Top Q-Value: {best_q}")
+        print(f"Best move: {selected_move}")
+    return selected_move
 
 
-board = [['-', '-', '-'],
-         ['O', 'X', '-'],
-         ['O', '-', '-']]
+for epoch in range(epochs):
+    board = [['-', '-', '-'],
+             ['-', '-', '-'],
+             ['-', '-', '-']]
 
-tuple_board = tuple(tuple(row) for row in board)
+    print("The Game of Tic-Tac-Toe")
+    first_player = random.choice(players)
+#
+#
+    def game(player=first_player):
+        iteration = 0
+        while iteration < 9:
+            iteration += 1
+            print(f"Player {player} move...")
+            if player == "X":
+                move = get_calculated_move(board)
+                board[move[0]][move[1]] = player
+            else:
+                move = get_human_move()
+                board[move[0]][move[1]] = player
 
-q_table[tuple_board][(0, 0)] = 0.8
-q_table[tuple_board][(0, 1)] = 0.5
-q_table[tuple_board][(1, 2)] = 0.2
-q_table[tuple_board][(2, 2)] = 0.6
+            player = 'O' if player == 'X' else 'X'
 
-get_calculated_move(board, "X")
-print(board)
+            for line in board:
+                print(' '.join(line))
+            if is_victory(board):
+                iteration = 10
+            if iteration == 9:
+                print("It's a draw!")
+        print("Game over!")
+
+    game(first_player)
+
+#
+# board = [['-', '-', '-'],
+#          ['-', '-', '-'],
+#          ['-', '-', '-']]
+# board1 = [['-', '-', '-'],
+#           ['O', 'X', '-'],
+#           ['O', '-', '-']]
+# board2 = [['-', '-', 'O'],
+#           ['-', '-', 'O'],
+#           ['-', '-', 'O']]
+#
+# states = [board, board1, board2]
+# for board in states:
+#     get_calculated_move(board, "X")
+#     for row in board:
+#         print(' '.join(row))
 pprint(q_table)
-
