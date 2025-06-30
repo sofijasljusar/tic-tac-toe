@@ -74,20 +74,24 @@ def get_calculated_move(state):
     available_moves = get_available_moves(state)
     dictionary_state = tuple(tuple(row) for row in state)
     if dictionary_state not in q_table:
-        print("Adding state:", dictionary_state)
+        print("Adding unseen state:", dictionary_state)
         for action in available_moves:
             q_table[dictionary_state][action] = 0.0
         selected_move = get_random_move()
-        print(f"Making random move: {selected_move}")
+        print(f"Unseen state -> making random move: {selected_move}")
     else:
-        best_q = float('-inf')
-        for action, q in q_table[dictionary_state].items():
-            print(action)
-            if q > best_q:
-                best_q = q
-                selected_move = action
-        print(f"Top Q-Value: {best_q}")
-        print(f"Best move: {selected_move}")
+        if all(q == 0.0 for q in q_table[dictionary_state].values()):
+            selected_move = get_random_move()
+            print(f"All values 0s -> making random move: {selected_move}")
+        else:
+            best_q = float('-inf')
+            for action, q in q_table[dictionary_state].items():
+                print(action)
+                if q > best_q:
+                    best_q = q
+                    selected_move = action
+            print(f"Top Q-Value: {best_q}")
+            print(f"Best move: {selected_move}")
     return selected_move
 
 
@@ -121,23 +125,9 @@ for epoch in range(epochs):
             if iteration == 9:
                 print("It's a draw!")
         print("Game over!")
+        pprint(q_table)
 
     game(first_player)
 
-#
-# board = [['-', '-', '-'],
-#          ['-', '-', '-'],
-#          ['-', '-', '-']]
-# board1 = [['-', '-', '-'],
-#           ['O', 'X', '-'],
-#           ['O', '-', '-']]
-# board2 = [['-', '-', 'O'],
-#           ['-', '-', 'O'],
-#           ['-', '-', 'O']]
-#
-# states = [board, board1, board2]
-# for board in states:
-#     get_calculated_move(board, "X")
-#     for row in board:
-#         print(' '.join(row))
 pprint(q_table)
+
