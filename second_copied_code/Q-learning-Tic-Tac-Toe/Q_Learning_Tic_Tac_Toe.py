@@ -1,7 +1,7 @@
 import numpy as np
 import tkinter as tk
 import copy
-import pickle as pickle    # cPickle is for Python 2.x only; in Python 3, simply "import pickle" and the accelerated version will be used automatically if available
+
 
 class Game:
     def __init__(self, master, player1, player2, Q_learn=None, Q={}, alpha=0.3, gamma=0.9):
