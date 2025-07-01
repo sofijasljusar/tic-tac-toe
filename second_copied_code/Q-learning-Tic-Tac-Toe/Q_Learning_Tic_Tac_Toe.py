@@ -1,7 +1,7 @@
 import numpy as np
 import tkinter as tk
 import copy
-
+import pickle as pickle    # cPickle is for Python 2.x only; in Python 3, simply "import pickle" and the accelerated version will be used automatically if available
 
 class Game:
     def __init__(self, master, player1, player2, Q_learn=None, Q={}, alpha=0.3, gamma=0.9):
@@ -132,6 +132,7 @@ class Game:
         next_board = self.board.get_next_board(move, self.current_player.mark)
         reward = next_board.give_reward()
         next_state_key = QPlayer.make_and_maybe_add_key(next_board, self.other_player.mark, self.Q)
+        print(next_state_key)
         if next_board.over():
             expected = reward
         else:
