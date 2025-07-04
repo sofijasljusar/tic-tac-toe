@@ -304,6 +304,7 @@ while count < max_episodes:
         row, col = random.choice(empty_spots)
 
         place_X(board, logical_board, (row, col))
+        print(f"move X at {(row, col)}")
 
         to_move = "O"
 
@@ -314,7 +315,7 @@ while count < max_episodes:
                 if logical_board[i][j] == 0:
                     if (i, j) not in q_values[last_state]:
                         q_values[last_state][(i, j)] = 0.0
-
+        print(f"saved last state {q_values[last_state]}")
         if random.random() < epsilon_greedy:
             row, col = random.choice(get_empty_spots(logical_board))
         else:
@@ -323,22 +324,24 @@ while count < max_episodes:
             row, col = action
 
         place_O(board, logical_board, (row, col))
-
+        print(f"move O at {(row, col)}")
         new_state = tuple(tuple(row) for row in logical_board)
         for i in range(3):
             for j in range(3):
                 if logical_board[i][j] == 0:
                     if (i, j) not in q_values[new_state]:
                         q_values[new_state][(i, j)] = 0.0
-
+        print(f"saved new state {q_values[new_state]}")
         reward = -0.005
         actions_dict = q_values.get(new_state, {})
         if len(actions_dict) == 0:
             max_value = 0.0
+            print("no actions for new state, max is 0")
         else:
             action, max_value = max(actions_dict.items(), key=lambda x: x[1])
+        print(f"UPDATING {last_state} {q_values[last_state][(row, col)]}")
         q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward + discount_factor*max_value - q_values[last_state][(row, col)])
-
+        print(f"TO {q_values[last_state][(row, col)]}")
         to_move = "X"
 
     winner = check_win(board)
@@ -360,7 +363,7 @@ while count < max_episodes:
         epsilon_greedy = max(epsilon_greedy * 0.99, 0.05)
         count += 1
         pbar.update(1)
-
+print(q_values)
 pbar.close()
 
 print("=========== Training Results ===========")
