@@ -1,3 +1,5 @@
+
+
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
 import pygame, sys
@@ -177,7 +179,7 @@ def print_q_value(q_values):
 
         print("Actions and Q-values:")
         for action, q_value in actions.items():
-            print(f"  Action {action}: Q-value = {q_value:.2f}")
+            print(f"  Action {action}: Q-value = {q_value:.10f}")
         print("------------------------")
     print("========================\n")
 
@@ -191,7 +193,7 @@ def print_state_q_values(q_values, state):
     if state in q_values:
         actions = q_values[state]
         for action, q_value in actions.items():
-            print(f"  Action {action}: Q-value = {q_value:.2f}")
+            print(f"  Action {action}: Q-value = {q_value:.10f}")
     else:
         print("  No action available for this state.")
     print("====================================\n")
@@ -315,13 +317,23 @@ while count < max_episodes:
                 if logical_board[i][j] == 0:
                     if (i, j) not in q_values[last_state]:
                         q_values[last_state][(i, j)] = 0.0
-        print(f"saved last state {q_values[last_state]}")
+        # print(f"\nsaved last state")
+        # # for row in last_state:
+        # #     print("  " + " ".join(str(cell) for cell in row))
+        # print_q_value(q_values)
+        # print_state_q_values(q_values, last_state)
+        # print("end last state print\n")
         if random.random() < epsilon_greedy:
             row, col = random.choice(get_empty_spots(logical_board))
+            print("random row", row)
         else:
             max_action = max(q_values.get(last_state, {}).items(), key=lambda x: x[1])
             action, max_value = max_action
+            print("action", action)
             row, col = action
+            print("selected row", row)
+            print("col", col)
+
 
         place_O(board, logical_board, (row, col))
         print(f"move O at {(row, col)}")
@@ -331,32 +343,54 @@ while count < max_episodes:
                 if logical_board[i][j] == 0:
                     if (i, j) not in q_values[new_state]:
                         q_values[new_state][(i, j)] = 0.0
-        print(f"saved new state {q_values[new_state]}")
+        # print(f"\nsaved new state")
+        # print_q_value(q_values)
+        # print_state_q_values(q_values, new_state)
+        # print("end new state print\n")
         reward = -0.005
+        print(f"reward is {reward}")
         actions_dict = q_values.get(new_state, {})
+        print("MAX FUTURE")
+        print(actions_dict)
         if len(actions_dict) == 0:
             max_value = 0.0
             print("no actions for new state, max is 0")
         else:
             action, max_value = max(actions_dict.items(), key=lambda x: x[1])
-        print(f"UPDATING {last_state} {q_values[last_state][(row, col)]}")
+        print("I think max value is 0, is it?", max_value)
+
+        print(f"\nUPDATING {row}, {col} for {last_state}")
+        print(f"TO {q_values[last_state][(row, col)] + learning_rate*(reward + discount_factor*max_value - q_values[last_state][(row, col)])}")
+        print("before")
+        print_state_q_values(q_values, last_state)
+        print("last state", last_state)
+        print("action", (row, col))
+        print("q-value for action", q_values[last_state][(row, col)])
         q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward + discount_factor*max_value - q_values[last_state][(row, col)])
-        print(f"TO {q_values[last_state][(row, col)]}")
+        print("after")
+        print_state_q_values(q_values, last_state)
+        print("end UPDATING\n")
         to_move = "X"
 
     winner = check_win(board)
     if winner is not None:
         if winner == "X":
             reward = -1
+            print(f"X won and reward is {reward}")
             q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])
+            print(f"updated value to {q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])}")
             loss_count += 1
         elif winner == "O":
             reward = 1
+            print(f"O won and reward is {reward}")
             q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])
+            print(f"updated value to {q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])}")
             win_count += 1
         else:
             reward = 0
+            print(f"Stalemate and reward is {reward}")
             q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])
+            print(f"updated value to {q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])}")
             stalemate_count += 1
 
         game_finished = True
@@ -492,6 +526,7 @@ while True:
                                 q_values[new_state][(i, j)] = 0.0
 
                 reward = 0.0
+                print(f"(play by human) reward is {reward}")
                 actions_dict = q_values.get(new_state, {})
                 if len(actions_dict) == 0:
                     max_value = 0.0
@@ -506,16 +541,19 @@ while True:
             if winner is not None:
                 if winner == "X":
                     reward = -1
+                    print(f"X won and reward is {reward}")
                     q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
                                 reward - q_values[last_state][(row, col)])
                     play_loss_count += 1
                 elif winner == "O":
                     reward = 1
+                    print(f"O won and reward is {reward}")
                     q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
                                 reward - q_values[last_state][(row, col)])
                     play_win_count += 1
                 else:
                     reward = 0
+                    print(f"Stalemate and reward is {reward}")
                     q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
                                 reward - q_values[last_state][(row, col)])
                     play_stalemate_count += 1
@@ -533,4 +571,3 @@ while True:
                     print(f"Stalemate: {play_stalemate_count}")
                     print(f"Current epsilon value: {epsilon_greedy}")
                     print(f"Win rate is {win_rate * 100}%")
-
