@@ -1,4 +1,26 @@
+"""
+I figured it out. My general question was how to get future state. <----------
+I looked at such implementations: minmax, self-play, but mostly did not understand the simplest random opponent.
+It made me think:
+what states are stored in Q-Table - agent's only or also opponent's?;
+if I'm supposed to store only agent's state, how can I get future state which is controlled by opponent?;
+if opponent is not learning, what is the point of storing his states it Q-Table?;
+how can I get maximum q-value of the state that is not even supposed to be there?;
 
+After seeing that in this code q-values for opponent states are only initialized with 0s and never updated,
+and maximum is therefore always 0 (checked), what is the point of keeping maximum and discount_factor?
+
+----------> So it leaves me with 3 options:
+1. Discard max_value and discount_factor from the formula.
+The flow remains the same (as do winning rates (checked)).
+It works well because of dense reward signal (-0.005 after each intermediate step),
+plus exploration and terminal rewards.
+
+2. Get state''.
+Evaluate max_value based on agent's next possible q-values, after the opponent placed his mark.
+
+3. Self-play or min-max for more advanced.
+"""
 
 import os
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
