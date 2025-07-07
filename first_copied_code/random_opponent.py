@@ -359,36 +359,36 @@ while count < max_episodes:
 
         place_O(board, logical_board, (row, col))
         print(f"move O at {(row, col)}")
-        new_state = tuple(tuple(row) for row in logical_board)
-        for i in range(3):
-            for j in range(3):
-                if logical_board[i][j] == 0:
-                    if (i, j) not in q_values[new_state]:
-                        q_values[new_state][(i, j)] = 0.0
+        # new_state = tuple(tuple(row) for row in logical_board)
+        # for i in range(3):
+        #     for j in range(3):
+        #         if logical_board[i][j] == 0:
+        #             if (i, j) not in q_values[new_state]:
+        #                 q_values[new_state][(i, j)] = 0.0
         # print(f"\nsaved new state")
         # print_q_value(q_values)
         # print_state_q_values(q_values, new_state)
         # print("end new state print\n")
         reward = -0.005
         print(f"reward is {reward}")
-        actions_dict = q_values.get(new_state, {})
-        print("MAX FUTURE")
-        print(actions_dict)
-        if len(actions_dict) == 0:
-            max_value = 0.0
-            print("no actions for new state, max is 0")
-        else:
-            action, max_value = max(actions_dict.items(), key=lambda x: x[1])
-        print("I think max value is 0, is it?", max_value)
+        # actions_dict = q_values.get(new_state, {})
+        # print("MAX FUTURE")
+        # print(actions_dict)
+        # if len(actions_dict) == 0:
+        #     max_value = 0.0
+        #     print("no actions for new state, max is 0")
+        # else:
+        #     action, max_value = max(actions_dict.items(), key=lambda x: x[1])
+        # print("I think max value is 0, is it?", max_value)
 
         print(f"\nUPDATING {row}, {col} for {last_state}")
-        print(f"TO {q_values[last_state][(row, col)] + learning_rate*(reward + discount_factor*max_value - q_values[last_state][(row, col)])}")
+        print(f"TO {q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])}")
         print("before")
         print_state_q_values(q_values, last_state)
         print("last state", last_state)
         print("action", (row, col))
         print("q-value for action", q_values[last_state][(row, col)])
-        q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward + discount_factor*max_value - q_values[last_state][(row, col)])
+        q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])
         print("after")
         print_state_q_values(q_values, last_state)
         print("end UPDATING\n")
@@ -540,22 +540,22 @@ while True:
                             SCREEN.blit(graphical_board[i][j][0], graphical_board[i][j][1])
                 pygame.display.update()
 
-                new_state = tuple(tuple(row) for row in logical_board)
-                for i in range(3):
-                    for j in range(3):
-                        if logical_board[i][j] == 0:
-                            if (i, j) not in q_values[new_state]:
-                                q_values[new_state][(i, j)] = 0.0
+                # new_state = tuple(tuple(row) for row in logical_board)
+                # for i in range(3):
+                #     for j in range(3):
+                #         if logical_board[i][j] == 0:
+                #             if (i, j) not in q_values[new_state]:
+                #                 q_values[new_state][(i, j)] = 0.0
 
                 reward = 0.0
                 print(f"(play by human) reward is {reward}")
-                actions_dict = q_values.get(new_state, {})
-                if len(actions_dict) == 0:
-                    max_value = 0.0
-                else:
-                    action, max_value = max(actions_dict.items(), key=lambda x: x[1])
+                # actions_dict = q_values.get(new_state, {})
+                # if len(actions_dict) == 0:
+                #     max_value = 0.0
+                # else:
+                #     action, max_value = max(actions_dict.items(), key=lambda x: x[1])
                 q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
-                            reward + discount_factor * max_value - q_values[last_state][(row, col)])
+                            reward - q_values[last_state][(row, col)])
 
                 to_move = "X"
 
