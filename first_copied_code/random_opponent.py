@@ -20,6 +20,40 @@ plus exploration and terminal rewards.
 Evaluate max_value based on agent's next possible q-values, after the opponent placed his mark.
 
 3. Self-play or min-max for more advanced.
+
+
+Another mistake I found:
+Previously I found that in q-table opponent controlled states were initialized and "read from" even if always 0s,
+so I took it away.
+Today I also saw that even though for correct state (agent controlled) q-value was updated for the incorrect action,
+renamed variables for alternating turns and it fixed the issue. Now everything is updated correctly:
+
+> > > agent wins > > >
+board after move
+  0 1 1
+  2 1 1
+  2 2 2
+O won and reward is 1
+updated value of ((0, 1, 1), (2, 1, 1), (2, 0, 2)) (2, 1) to 0.29895
+
+> > > opponent wins > > >
+board after move
+  0 2 2
+  2 0 1
+  1 0 1
+move X at (2, 1)
+X won and reward is -1
+updated value of ((0, 0, 2), (2, 0, 1), (1, 0, 1)) (0, 1) to -0.30105
+
+> > > stalemate > > >
+board after move
+  2 0 1
+  1 2 2
+  1 2 1
+move X at (0, 1)
+Stalemate and reward is 0
+updated value of ((0, 0, 1), (1, 2, 2), (1, 2, 1)) (0, 0) to -0.0010500000000000002
+
 """
 
 import os
@@ -346,19 +380,19 @@ while count < max_episodes:
         # print_state_q_values(q_values, last_state)
         # print("end last state print\n")
         if random.random() < epsilon_greedy:
-            row, col = random.choice(get_empty_spots(logical_board))
-            print("random row", row)
+            agent_row, agent_col = random.choice(get_empty_spots(logical_board))
+            print("random row", agent_row)
         else:
             max_action = max(q_values.get(last_state, {}).items(), key=lambda x: x[1])
             action, max_value = max_action
             print("action", action)
-            row, col = action
-            print("selected row", row)
-            print("col", col)
+            agent_row, agent_col = action
+            print("selected row", agent_row)
+            print("col", agent_col)
 
 
-        place_O(board, logical_board, (row, col))
-        print(f"move O at {(row, col)}")
+        place_O(board, logical_board, (agent_row, agent_col))
+        print(f"move O at {(agent_row, agent_col)}")
         # new_state = tuple(tuple(row) for row in logical_board)
         # for i in range(3):
         #     for j in range(3):
@@ -381,38 +415,40 @@ while count < max_episodes:
         #     action, max_value = max(actions_dict.items(), key=lambda x: x[1])
         # print("I think max value is 0, is it?", max_value)
 
-        print(f"\nUPDATING {row}, {col} for {last_state}")
-        print(f"TO {q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])}")
+        print(f"\nUPDATING {agent_row, agent_col} for {last_state}")
+        print(f"TO {q_values[last_state][(agent_row, agent_col)] + learning_rate*(reward - q_values[last_state][(agent_row, agent_col)])}")
         print("before")
         print_state_q_values(q_values, last_state)
         print("last state", last_state)
-        print("action", (row, col))
-        print("q-value for action", q_values[last_state][(row, col)])
-        q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])
+        print("action", (agent_row, agent_col))
+        print("q-value for action", q_values[last_state][(agent_row, agent_col)])
+        q_values[last_state][(agent_row, agent_col)] = q_values[last_state][(agent_row, agent_col)] + learning_rate*(reward - q_values[last_state][(agent_row, agent_col)])
         print("after")
         print_state_q_values(q_values, last_state)
         print("end UPDATING\n")
         to_move = "X"
-
+        print("board after move")
+        for line in logical_board:
+            print("  " + " ".join(str(mark) for mark in line))
     winner = check_win(board)
     if winner is not None:
         if winner == "X":
             reward = -1
             print(f"X won and reward is {reward}")
-            q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])
-            print(f"updated value to {q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])}")
+            print(f"updated value of {last_state} {agent_row, agent_col} to {q_values[last_state][(agent_row, agent_col)] + learning_rate*(reward - q_values[last_state][(agent_row, agent_col)])}")
+            q_values[last_state][(agent_row, agent_col)] = q_values[last_state][(agent_row, agent_col)] + learning_rate*(reward - q_values[last_state][(agent_row, agent_col)])
             loss_count += 1
         elif winner == "O":
             reward = 1
             print(f"O won and reward is {reward}")
-            q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])
-            print(f"updated value to {q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])}")
+            print(f"updated value of {last_state} {agent_row, agent_col} to {q_values[last_state][(agent_row, agent_col)] + learning_rate*(reward - q_values[last_state][(agent_row, agent_col)])}")
+            q_values[last_state][(agent_row, agent_col)] = q_values[last_state][(agent_row, agent_col)] + learning_rate*(reward - q_values[last_state][(agent_row, agent_col)])
             win_count += 1
         else:
             reward = 0
             print(f"Stalemate and reward is {reward}")
-            q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])
-            print(f"updated value to {q_values[last_state][(row, col)] + learning_rate*(reward - q_values[last_state][(row, col)])}")
+            print(f"updated value of {last_state} {agent_row, agent_col} to {q_values[last_state][(agent_row, agent_col)] + learning_rate*(reward - q_values[last_state][(agent_row, agent_col)])}")
+            q_values[last_state][(agent_row, agent_col)] = q_values[last_state][(agent_row, agent_col)] + learning_rate*(reward - q_values[last_state][(agent_row, agent_col)])
             stalemate_count += 1
 
         game_finished = True
@@ -522,16 +558,16 @@ while True:
                                 q_values[last_state][(i, j)] = 0.0
 
                 if random.random() < epsilon_greedy:
-                    row, col = random.choice(get_empty_spots(logical_board))
-                    print(f"We chose to explore: ({row, col})")
+                    agent_row, agent_col = random.choice(get_empty_spots(logical_board))
+                    print(f"We chose to explore: ({agent_row, agent_col})")
                 else:
                     max_action = max(q_values.get(last_state, {}).items(), key=lambda x: x[1])
                     action, max_value = max_action
                     print_state_q_values(q_values, last_state)
                     print(f"We chose {action} with value: {max_value}")
-                    row, col = action
+                    agent_row, agent_col = action
 
-                place_O(board, logical_board, (row, col))
+                place_O(board, logical_board, (agent_row, agent_col))
 
                 render_board(board, X_IMG, O_IMG)
                 for i in range(3):
@@ -554,8 +590,8 @@ while True:
                 #     max_value = 0.0
                 # else:
                 #     action, max_value = max(actions_dict.items(), key=lambda x: x[1])
-                q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
-                            reward - q_values[last_state][(row, col)])
+                q_values[last_state][(agent_row, agent_col)] = q_values[last_state][(agent_row, agent_col)] + learning_rate * (
+                            reward - q_values[last_state][(agent_row, agent_col)])
 
                 to_move = "X"
 
@@ -564,20 +600,20 @@ while True:
                 if winner == "X":
                     reward = -1
                     print(f"X won and reward is {reward}")
-                    q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
-                                reward - q_values[last_state][(row, col)])
+                    q_values[last_state][(agent_row, agent_col)] = q_values[last_state][(agent_row, agent_col)] + learning_rate * (
+                                reward - q_values[last_state][(agent_row, agent_col)])
                     play_loss_count += 1
                 elif winner == "O":
                     reward = 1
                     print(f"O won and reward is {reward}")
-                    q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
-                                reward - q_values[last_state][(row, col)])
+                    q_values[last_state][(agent_row, agent_col)] = q_values[last_state][(agent_row, agent_col)] + learning_rate * (
+                                reward - q_values[last_state][(agent_row, agent_col)])
                     play_win_count += 1
                 else:
                     reward = 0
                     print(f"Stalemate and reward is {reward}")
-                    q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
-                                reward - q_values[last_state][(row, col)])
+                    q_values[last_state][(agent_row, agent_col)] = q_values[last_state][(agent_row, agent_col)] + learning_rate * (
+                                reward - q_values[last_state][(agent_row, agent_col)])
                     play_stalemate_count += 1
 
                 game_finished = True
