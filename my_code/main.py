@@ -1,3 +1,26 @@
+"""
+I did it badly, but I did it!
+This is a play against random opponent and the agent is learning from immediate rewards.
+The stats are: (tested for small nuber of games for now to see all the nuances)
+At 50 games, the current stats are:
+Wins: 22
+Losses: 23
+Stalemate: 5
+Current epsilon value: 0.2
+Win rate is 44.0%
+
+And in q-table, we can see that the agent learns winning moves and remembers how not to do:
+(('X', 'X', '-'), ('O', '-', 'O'), ('-', '-', '-')): defaultdict(<class 'float'>,
+                                                                              {(0, 2): 0.29895,
+                                                                               (1, 1): 0.0,
+                                                                               (2, 0): 0.0,
+                                                                               (2, 1): 0.0,
+                                                                               (2, 2): 0.0})
+(('O', 'X', 'X'), ('X', '-', 'O'), ('O', '-', 'O')): defaultdict(<class 'float'>,
+                                                                              {(1, 1): 0.0,
+                                                                               (2, 1): -0.30105})
+"""
+
 import random
 from pprint import pprint
 from collections import defaultdict
@@ -18,8 +41,13 @@ players = ["X", "O"]
 learning_rate = 0.3
 discount_factor = 0.9
 exploration_prob = 0.2
-epochs = 10
+epochs = 50
 q_table = defaultdict(lambda: defaultdict(float))
+
+wins = 0
+loses = 0
+stalemate = 0
+# total_games = 0
 
 
 def is_winner(current_state):
@@ -31,6 +59,10 @@ def is_winner(current_state):
             print(f"{winner} won!")
             return winner
     return None
+
+
+def is_terminal(state):
+    return is_winner(state) is not None or len(get_available_moves(state)) == 0
 
 
 def move_is_valid(x, y):
@@ -76,15 +108,14 @@ def get_tuple_state(list_board):
 
 
 def get_reward(state):
-    if len(get_available_moves(state)) == 0:
-        winner = is_winner(state)
-        if winner:
-            if winner == "X":
-                return 1.0
-            elif winner == "O":
-                return -1.0
-        else:
-            return 0.5
+    winner = is_winner(state)
+    if winner:
+        if winner == "X":
+            return 1.0
+        elif winner == "O":
+            return -1.0
+    elif len(get_available_moves(state)) == 0:
+        return 0.5
     else:
         return 0.0
 
@@ -95,17 +126,16 @@ def get_next_state(state, action):
     return next_state
 
 
-def update_q_value(state, action):
+def update_q_value(state, action, reward):
     current_state_key = get_tuple_state(state)
-    state_after = get_next_state(state, action)
-    state_after_key = get_tuple_state(state_after)
-    reward = get_reward(state_after)
-    if len(get_available_moves(state_after)) == 0:
-        new_estimate = reward
-    else:
-        future_estimates = q_table[state_after_key]
-        new_estimate = reward + (discount_factor * max(future_estimates.values()))
-    change = learning_rate * (new_estimate - q_table[current_state_key][action])
+    # state_after = get_next_state(state, action)
+    # state_after_key = get_tuple_state(state_after)
+    # if is_terminal(state_after):
+    #     new_estimate = reward
+    # else:
+    #     future_estimates = q_table[state_after_key]
+    #     new_estimate = reward + (discount_factor * max(future_estimates.values()))
+    change = learning_rate * (reward - q_table[current_state_key][action])
     q_table[current_state_key][action] += change
     print(f"Updating Q[{current_state_key}][{action}] with new estimate {q_table[current_state_key][action]}")
 
@@ -139,6 +169,40 @@ def get_calculated_move(state):
                 print(f"Best move: {selected_move}")
     return selected_move
 
+def game(player):
+    global wins, loses, stalemate, total_games
+    iteration = 0
+    while iteration < 9:
+        iteration += 1
+        print(f"Player {player} move...")
+        if player == "X":
+            agent_move = get_calculated_move(board)
+            update_q_value(board, agent_move, -0.005)
+            previous_state = deepcopy(board)
+            board[agent_move[0]][agent_move[1]] = player
+        else:
+            random_move = get_random_move()
+            board[random_move[0]][random_move[1]] = player
+
+        player = 'O' if player == 'X' else 'X'
+
+        for line in board:
+            print(' '.join(line))
+        winner = is_winner(board)
+        if winner:
+            iteration = 10
+            reward = get_reward(board)
+            update_q_value(previous_state, agent_move, reward)
+            if winner == "X":
+                wins += 1
+            else:
+                loses += 1
+        if iteration == 9:
+            stalemate += 1
+            print("It's a draw!")
+            reward = get_reward(board)
+            update_q_value(previous_state, agent_move, reward)
+    print("Game over!")
 
 for epoch in range(epochs):
     board = [['-', '-', '-'],
@@ -147,32 +211,13 @@ for epoch in range(epochs):
 
     print("The Game of Tic-Tac-Toe")
     first_player = random.choice(players)
-
-    def game(player=first_player):
-        iteration = 0
-        while iteration < 9:
-            iteration += 1
-            print(f"Player {player} move...")
-            if player == "X":
-                move = get_calculated_move(board)
-                update_q_value(board, move)
-                board[move[0]][move[1]] = player
-            else:
-                move = get_human_move()
-                board[move[0]][move[1]] = player
-
-            player = 'O' if player == 'X' else 'X'
-
-            for line in board:
-                print(' '.join(line))
-            if is_winner(board):
-                iteration = 10
-            if iteration == 9:
-                print("It's a draw!")
-        print("Game over!")
-        pprint(q_table)
-
     game(first_player)
 
+print("=========== Training Results ===========")
+print(f"At {epochs} games, the current stats are:")
+print(f"Wins: {wins}")
+print(f"Losses: {loses}")
+print(f"Stalemate: {stalemate}")
+print(f"Current epsilon value: {exploration_prob}")
+print(f"Win rate is {(wins/epochs) * 100}%")
 pprint(q_table)
-
