@@ -19,6 +19,70 @@ And in q-table, we can see that the agent learns winning moves and remembers how
 (('O', 'X', 'X'), ('X', '-', 'O'), ('O', '-', 'O')): defaultdict(<class 'float'>,
                                                                               {(1, 1): 0.0,
                                                                                (2, 1): -0.30105})
+
+> > > Testing with more epochs > > >
+At 100 games, the current stats are:
+Wins: 47
+Losses: 43
+Stalemate: 10
+Current epsilon value: 0.2
+Win rate is 47.0%
+
+=========== Training Results ===========
+At 500 games, the current stats are:
+Wins: 244
+Losses: 209
+Stalemate: 47
+Current epsilon value: 0.2
+Win rate is 48.8%
+
+=========== Training Results ===========
+At 1000 games, the current stats are:
+Wins: 471
+Losses: 404
+Stalemate: 125
+Current epsilon value: 0.2
+Win rate is 47.099999999999994%
+
+=========== Training Results ===========
+At 10000 games, the current stats are:
+Wins: 5765
+Losses: 2945
+Stalemate: 1290
+Current epsilon value: 0.2
+Win rate is 57.65%
+
+=========== Training Results ===========
+At 20000 games, the current stats are:
+Wins: 12589
+Losses: 4724
+Stalemate: 2687
+Current epsilon value: 0.2
+Win rate is 62.94499999999999%
+
+=========== Training Results ===========
+At 50000 games, the current stats are:
+Wins: 34419
+Losses: 8438
+Stalemate: 7143
+Current epsilon value: 0.2
+Win rate is 68.838%
+
+=========== Training Results ===========
+At 100000 games, the current stats are:
+Wins: 71564
+Losses: 14674
+Stalemate: 13762
+Current epsilon value: 0.2
+Win rate is 71.56400000000001%
+
+=========== Training Results ===========
+At 200000 games, the current stats are:
+Wins: 145848
+Losses: 26869
+Stalemate: 27283
+Current epsilon value: 0.2
+Win rate is 72.924%
 """
 
 import random
@@ -41,7 +105,7 @@ players = ["X", "O"]
 learning_rate = 0.3
 discount_factor = 0.9
 exploration_prob = 0.2
-epochs = 50
+epochs = 200000
 q_table = defaultdict(lambda: defaultdict(float))
 
 wins = 0
@@ -56,7 +120,7 @@ def is_winner(current_state):
                 == current_state[state[1][0]][state[1][1]]
                 == current_state[state[2][0]][state[2][1]] != '-'):
             winner = current_state[state[0][0]][state[0][1]]
-            print(f"{winner} won!")
+            # print(f"{winner} won!")
             return winner
     return None
 
@@ -137,7 +201,7 @@ def update_q_value(state, action, reward):
     #     new_estimate = reward + (discount_factor * max(future_estimates.values()))
     change = learning_rate * (reward - q_table[current_state_key][action])
     q_table[current_state_key][action] += change
-    print(f"Updating Q[{current_state_key}][{action}] with new estimate {q_table[current_state_key][action]}")
+    # print(f"Updating Q[{current_state_key}][{action}] with new estimate {q_table[current_state_key][action]}")
 
 
 def get_calculated_move(state):
@@ -145,28 +209,28 @@ def get_calculated_move(state):
     available_moves = get_available_moves(state)
     dictionary_state = get_tuple_state(state)
     if dictionary_state not in q_table:
-        print("Adding unseen state:", dictionary_state)
+        # print("Adding unseen state:", dictionary_state)
         for action in available_moves:
             q_table[dictionary_state][action] = 0.0
         selected_move = get_random_move()
-        print(f"Unseen state -> making random move: {selected_move}")
+        # print(f"Unseen state -> making random move: {selected_move}")
     else:
         if all(q == 0.0 for q in q_table[dictionary_state].values()):
             selected_move = get_random_move()
-            print(f"All values 0s -> making random move: {selected_move}")
+            # print(f"All values 0s -> making random move: {selected_move}")
         else:
             if random.random() < exploration_prob:
                 selected_move = get_random_move()
-                print(f"Exploration rate -> exploring new move: {selected_move}")
+                # print(f"Exploration rate -> exploring new move: {selected_move}")
             else:
                 best_q = float('-inf')
                 for action, q in q_table[dictionary_state].items():
-                    print(action)
+                    # print(action)
                     if q > best_q:
                         best_q = q
                         selected_move = action
-                print(f"Top Q-Value: {best_q}")
-                print(f"Best move: {selected_move}")
+                # print(f"Top Q-Value: {best_q}")
+                # print(f"Best move: {selected_move}")
     return selected_move
 
 def game(player):
@@ -174,7 +238,7 @@ def game(player):
     iteration = 0
     while iteration < 9:
         iteration += 1
-        print(f"Player {player} move...")
+        # print(f"Player {player} move...")
         if player == "X":
             agent_move = get_calculated_move(board)
             update_q_value(board, agent_move, -0.005)
@@ -186,8 +250,8 @@ def game(player):
 
         player = 'O' if player == 'X' else 'X'
 
-        for line in board:
-            print(' '.join(line))
+        # for line in board:
+            # print(' '.join(line))
         winner = is_winner(board)
         if winner:
             iteration = 10
@@ -199,17 +263,17 @@ def game(player):
                 loses += 1
         if iteration == 9:
             stalemate += 1
-            print("It's a draw!")
+            # print("It's a draw!")
             reward = get_reward(board)
             update_q_value(previous_state, agent_move, reward)
-    print("Game over!")
+    # print("Game over!")
 
 for epoch in range(epochs):
     board = [['-', '-', '-'],
              ['-', '-', '-'],
              ['-', '-', '-']]
 
-    print("The Game of Tic-Tac-Toe")
+    # print("The Game of Tic-Tac-Toe")
     first_player = random.choice(players)
     game(first_player)
 
@@ -220,4 +284,18 @@ print(f"Losses: {loses}")
 print(f"Stalemate: {stalemate}")
 print(f"Current epsilon value: {exploration_prob}")
 print(f"Win rate is {(wins/epochs) * 100}%")
-pprint(q_table)
+# pprint(q_table)
+
+# TODO: How would it be handled? if values are ==, then choose at random;
+#  I think it should find the min value, then compare all to max, if couple -> choose at random
+#  {(('-', '-', '-'), ('-', '-', '-'), ('-', '-', '-')): defaultdict(<class 'float'>,
+#                                                                               {(0, 0): -0.0045882284999999995,
+#                                                                                (0, 1): -0.004411755,
+#                                                                                (0, 2): -0.0045882284999999995,
+#                                                                                (1, 0): -0.0045882284999999995,
+#                                                                                (1, 1): -0.004411755,
+#                                                                                (1, 2): -0.004411755,
+#                                                                                (2, 0): -0.004411755,
+#                                                                                (2, 1): -0.004411755,
+#                                                                                (2, 2): -0.004411755}),
+#
