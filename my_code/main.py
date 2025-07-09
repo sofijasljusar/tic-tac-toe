@@ -83,6 +83,19 @@ Losses: 26869
 Stalemate: 27283
 Current epsilon value: 0.2
 Win rate is 72.924%
+
+> > > After change > > >
+*** Changed to randomly selecting among best actions with same q-value ***
+=========== Training Results ===========
+At 200000 games, the current stats are:
+Wins: 142383
+Losses: 27158
+Stalemate: 30459
+Current epsilon value: 0.2
+Win rate is 71.19149999999999%
+*** Winning rates for all previous milestones up to 200000 are always 2% less
+(because more exploration even during exploitation; agent does not settle into specific path right away,
+as it was first one chosen; and agent becomes less biased)
 """
 
 import random
@@ -105,7 +118,7 @@ players = ["X", "O"]
 learning_rate = 0.3
 discount_factor = 0.9
 exploration_prob = 0.2
-epochs = 200000
+epochs = 300000
 q_table = defaultdict(lambda: defaultdict(float))
 
 wins = 0
@@ -215,22 +228,26 @@ def get_calculated_move(state):
         selected_move = get_random_move()
         # print(f"Unseen state -> making random move: {selected_move}")
     else:
-        if all(q == 0.0 for q in q_table[dictionary_state].values()):
+        # random among maximum values handles this case as well
+        # if all(q == 0.0 for q in q_table[dictionary_state].values()):
+        #     selected_move = get_random_move()
+        #     # print(f"All values 0s -> making random move: {selected_move}")
+        # else:
+        if random.random() < exploration_prob:
             selected_move = get_random_move()
-            # print(f"All values 0s -> making random move: {selected_move}")
+            # print(f"Exploration rate -> exploring new move: {selected_move}")
         else:
-            if random.random() < exploration_prob:
-                selected_move = get_random_move()
-                # print(f"Exploration rate -> exploring new move: {selected_move}")
-            else:
-                best_q = float('-inf')
-                for action, q in q_table[dictionary_state].items():
-                    # print(action)
-                    if q > best_q:
-                        best_q = q
-                        selected_move = action
-                # print(f"Top Q-Value: {best_q}")
-                # print(f"Best move: {selected_move}")
+            # best_q = float('-inf')
+            # for action, q in q_table[dictionary_state].items():
+            #     # print(action)
+            #     if q > best_q:
+            #         best_q = q
+            #         selected_move = action
+            max_q = max(q_table[dictionary_state].values())
+            best_actions = [action for action, q in q_table[dictionary_state].items() if q == max_q]
+            selected_move = random.choice(best_actions)
+            # print(f"Top Q-Value: {max_q}")
+            # print(f"Best move: {selected_move}")
     return selected_move
 
 def game(player):
