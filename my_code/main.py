@@ -99,6 +99,7 @@ as it was first one chosen; and agent becomes less biased)
 """
 
 import random
+import pickle
 from pprint import pprint
 from collections import defaultdict
 from copy import deepcopy
@@ -119,7 +120,13 @@ learning_rate = 0.3
 discount_factor = 0.9
 exploration_prob = 0.2
 epochs = 300000
-q_table = defaultdict(lambda: defaultdict(float))
+
+
+def default_q_values():
+    return defaultdict(float)
+#
+#
+# q_table = defaultdict(default_q_values)
 
 wins = 0
 loses = 0
@@ -133,7 +140,7 @@ def is_winner(current_state):
                 == current_state[state[1][0]][state[1][1]]
                 == current_state[state[2][0]][state[2][1]] != '-'):
             winner = current_state[state[0][0]][state[0][1]]
-            # print(f"{winner} won!")
+            print(f"{winner} won!")
             return winner
     return None
 
@@ -285,21 +292,73 @@ def game(player):
             update_q_value(previous_state, agent_move, reward)
     # print("Game over!")
 
-for epoch in range(epochs):
+# for epoch in range(epochs):
+#     board = [['-', '-', '-'],
+#              ['-', '-', '-'],
+#              ['-', '-', '-']]
+#
+#     # print("The Game of Tic-Tac-Toe")
+#     first_player = random.choice(players)
+#     game(first_player)
+#
+# print("=========== Training Results ===========")
+# print(f"At {epochs} games, the current stats are:")
+# print(f"Wins: {wins}")
+# print(f"Losses: {loses}")
+# print(f"Stalemate: {stalemate}")
+# print(f"Current epsilon value: {exploration_prob}")
+# print(f"Win rate is {(wins/epochs) * 100}%")
+# pprint(q_table)
+
+# filename = "Q_epsilon_09_Nepisodes_{}.p".format(epochs)
+# pickle.dump(q_table, open(filename, "wb"))
+
+q_table = pickle.load(open("Q_epsilon_09_Nepisodes_300000.p", "rb"))
+
+def game_with_human(player):
+    global wins, loses, stalemate, total_games
+    iteration = 0
+    while iteration < 9:
+        iteration += 1
+        # print(f"Player {player} move...")
+        if player == "X":
+            print("Agent's move:")
+            agent_move = get_calculated_move(board)
+            update_q_value(board, agent_move, -0.005)
+            previous_state = deepcopy(board)
+            board[agent_move[0]][agent_move[1]] = player
+        else:
+            human_move = get_human_move()
+            board[human_move[0]][human_move[1]] = player
+
+        player = 'O' if player == 'X' else 'X'
+
+        for line in board:
+            print(' '.join(line))
+        winner = is_winner(board)
+        if winner:
+            iteration = 10
+            reward = get_reward(board)
+            update_q_value(previous_state, agent_move, reward)
+            if winner == "X":
+                wins += 1
+            else:
+                loses += 1
+        if iteration == 9:
+            stalemate += 1
+            print("It's a draw!")
+            reward = get_reward(board)
+            update_q_value(previous_state, agent_move, reward)
+    print("Game over!")
+game_continues = True
+while game_continues:
     board = [['-', '-', '-'],
              ['-', '-', '-'],
              ['-', '-', '-']]
 
     # print("The Game of Tic-Tac-Toe")
     first_player = random.choice(players)
-    game(first_player)
-
-print("=========== Training Results ===========")
-print(f"At {epochs} games, the current stats are:")
-print(f"Wins: {wins}")
-print(f"Losses: {loses}")
-print(f"Stalemate: {stalemate}")
-print(f"Current epsilon value: {exploration_prob}")
-print(f"Win rate is {(wins/epochs) * 100}%")
-# pprint(q_table)
-
+    game_with_human(first_player)
+    choice = int(input("Do you want to play again? 0-no, 1-yes"))
+    if choice == 0:
+        game_continues = False
