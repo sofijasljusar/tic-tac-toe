@@ -303,16 +303,3 @@ print(f"Current epsilon value: {exploration_prob}")
 print(f"Win rate is {(wins/epochs) * 100}%")
 # pprint(q_table)
 
-# TODO: How would it be handled? if values are ==, then choose at random;
-#  I think it should find the min value, then compare all to max, if couple -> choose at random
-#  {(('-', '-', '-'), ('-', '-', '-'), ('-', '-', '-')): defaultdict(<class 'float'>,
-#                                                                               {(0, 0): -0.0045882284999999995,
-#                                                                                (0, 1): -0.004411755,
-#                                                                                (0, 2): -0.0045882284999999995,
-#                                                                                (1, 0): -0.0045882284999999995,
-#                                                                                (1, 1): -0.004411755,
-#                                                                                (1, 2): -0.004411755,
-#                                                                                (2, 0): -0.004411755,
-#                                                                                (2, 1): -0.004411755,
-#                                                                                (2, 2): -0.004411755}),
-#
