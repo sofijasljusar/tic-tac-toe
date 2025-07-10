@@ -313,7 +313,7 @@ def game(player):
 # filename = "Q_epsilon_09_Nepisodes_{}.p".format(epochs)
 # pickle.dump(q_table, open(filename, "wb"))
 
-q_table = pickle.load(open("Q_epsilon_09_Nepisodes_300000.p", "rb"))
+q_table = pickle.load(open("Q_updated_after_human.p", "rb"))
 
 def game_with_human(player):
     global wins, loses, stalemate, total_games
@@ -359,6 +359,9 @@ while game_continues:
     # print("The Game of Tic-Tac-Toe")
     first_player = random.choice(players)
     game_with_human(first_player)
-    choice = int(input("Do you want to play again? 0-no, 1-yes"))
+    choice = int(input("Do you want to play again? 0-no, 1-yes\n"))
     if choice == 0:
         game_continues = False
+        with open("Q_updated_after_human.p", "wb") as f:
+            pickle.dump(q_table, f)
+        print("Saved updated q-table after human play")
