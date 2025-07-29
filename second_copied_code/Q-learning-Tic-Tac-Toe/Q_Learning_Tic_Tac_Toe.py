@@ -129,10 +129,13 @@ class Game:
 
     def learn_Q(self, move):                        # If Q-learning is toggled on, "learn_Q" should be called after receiving a move from an instance of Player and before implementing the move (using Board's "place_mark" method)
         state_key = QPlayer.make_and_maybe_add_key(self.board, self.current_player.mark, self.Q)
+        print("state_key", state_key)
         next_board = self.board.get_next_board(move, self.current_player.mark)
+        print("next_board", next_board)
         reward = next_board.give_reward()
+        print("reward", reward)
         next_state_key = QPlayer.make_and_maybe_add_key(next_board, self.other_player.mark, self.Q)
-        print(next_state_key)
+        print("next_state_key", next_state_key)
         if next_board.over():
             expected = reward
         else:
