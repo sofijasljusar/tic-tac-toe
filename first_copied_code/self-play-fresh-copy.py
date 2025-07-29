@@ -1,54 +1,3 @@
-"""What I noticed in self-play previously:
-> Too many 0s in X Q-table -> only updated at terminal state,
-  because reward is 0 and next max action always 0.
-> The next state is initialized but never updated in current agent table.
-> x_epsilon_greedy is never updated. Is this a bug or intended.
-  Changing this decreased win rate,
-  but it was expected as opponent became less random.
-
-
-What I changed:
-Made next possible values be evaluated from opponent table
-
-How it influenced behavior:
-When I looked at dictionaries of future values, the estimates were different from 0.
-Trained on 100 episodes to see change (closer to the end of training). On the other hand,
-in old version all possible next values are 0s
-
-What I noticed:
-Stats are 20% lover even during large training episodes (100,000 ... 300,000 ...)
-It's interesting why it happens. Possible reason is that old code converged faster due to
-incorrect logic implementation. I will look more into it later.
-
-Comparison Stats:
-episodes - 100,000
-alpha - 0.3
-gamma - 0.9
-                NEW CODE    OLD CODE
-
-Agent goes 1    67%         89%
-                67%         89%
-                67%         89%
-
-Agent goes 2    54%         68%
-                48%         67%
-                49%         67%
-
-episodes - 300,000
-
-Old Version
-Agent starts	Wins	Losses	Draws	Win Rate
-First 	       270,613	10,034	19,353	90.2%
-Second         208,573	32,728	58,699	69.5%
-
-New Version
-Agent starts	Wins	Losses	Draws	Win Rate
-First          198,704	45,590	55,706	66.2%
-Second 	       144,035	67,593	88,372	48.0%
-"""
-
-
-
 import os
 
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
@@ -243,7 +192,7 @@ def print_state_q_values(q_values, state):
     if state in q_values:
         actions = q_values[state]
         for action, q_value in actions.items():
-            print(f"  Action {action}: Q-value = {q_value}")
+            print(f"  Action {action}: Q-value = {q_value:.2f}")
     else:
         print("  No actions available for this state.")
     print("====================================\n")
@@ -367,10 +316,6 @@ while count < max_episodes:
         game_finished = False
 
     if to_move == "X":
-        # print("X goes")
-        # print("X state before")
-        # for line in logical_board:
-        #     print(line)
         x_last_state = tuple(tuple(row) for row in logical_board)
         for i in range(3):
             for j in range(3):
@@ -384,40 +329,30 @@ while count < max_episodes:
             max_action1 = max(x_q_values.get(x_last_state, {}).items(), key=lambda x: x[1])
             action1, max_value1 = max_action1
             row1, col1 = action1
-            # print(f"X: {row1}, {col1}")
 
         place_X(board, logical_board, (row1, col1))
-        # print("X state after")
-        # for line in logical_board:
-        #     print(line)
+
         x_new_state = tuple(tuple(row) for row in logical_board)
         for i in range(3):
             for j in range(3):
                 if logical_board[i][j] == 0:
-                    # CHANGED HERE TO OPPONENT TABLE
-                    if (i, j) not in q_values[x_new_state]:
-                        q_values[x_new_state][(i, j)] = 0.0
+                    if (i, j) not in x_q_values[x_new_state]:
+                        x_q_values[x_new_state][(i, j)] = 0.0
 
         reward1 = 0
-        actions_dict1 = q_values.get(x_new_state, {})
-        # print("next possible values", actions_dict1)
+        actions_dict1 = x_q_values.get(x_new_state, {})
+        # print("next possible values X", actions_dict1)
+
         if len(actions_dict1) == 0:
             max_value1 = 0.0
         else:
             action1, max_value1 = max(actions_dict1.items(), key=lambda x: x[1])
-        # print(f"reward is {reward1}, max value is {max_value1}")
-        # print(
-        #     f"UPDATING X {x_last_state} to {x_q_values[x_last_state][(row1, col1)] + x_learning_rate * (reward1 + x_discount_factor * (max_value1) - x_q_values[x_last_state][(row1, col1)])}")
         x_q_values[x_last_state][(row1, col1)] = x_q_values[x_last_state][(row1, col1)] + x_learning_rate * (
                     reward1 + x_discount_factor * (max_value1) - x_q_values[x_last_state][(row1, col1)])
 
         to_move = 'O'
 
     else:
-        # print("O goes")
-        # print("O state before")
-        # for line in logical_board:
-        #     print(line)
         last_state = tuple(tuple(row) for row in logical_board)
         for i in range(3):
             for j in range(3):
@@ -431,28 +366,23 @@ while count < max_episodes:
             max_action = max(q_values.get(last_state, {}).items(), key=lambda x: x[1])
             action, max_value = max_action
             row, col = action
-            # print(f"O: {row}, {col}")
+
         place_O(board, logical_board, (row, col))
-        # print("O state after")
-        # for line in logical_board:
-            # print(line)
+
         new_state = tuple(tuple(row) for row in logical_board)
         for i in range(3):
             for j in range(3):
                 if logical_board[i][j] == 0:
-                    # CHANGED HERE TO OPPONENT TABLE
-                    if (i, j) not in x_q_values[new_state]:
-                        x_q_values[new_state][(i, j)] = 0.0
+                    if (i, j) not in q_values[new_state]:
+                        q_values[new_state][(i, j)] = 0.0
 
         reward = -0.005
-        actions_dict = x_q_values.get(new_state, {})
+        actions_dict = q_values.get(new_state, {})
+        # print("next possible values O", actions_dict)
         if len(actions_dict) == 0:
             max_value = 0.0
         else:
             action, max_value = max(actions_dict.items(), key=lambda x: x[1])
-        # print(f"reward is {reward}, max value is {max_value}")
-        # print(
-        #     f"UPDATING O {last_state} to {q_values[last_state][(row, col)] + learning_rate * (reward + discount_factor * (max_value) - q_values[last_state][(row, col)])}")
         q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
                     reward + discount_factor * (max_value) - q_values[last_state][(row, col)])
 
@@ -462,37 +392,22 @@ while count < max_episodes:
     if winner is not None:
         if winner == "X":
             reward = -1
-            # print(f"X won, reward {reward}")
-            # print(
-            #     f"UPDATING X {x_last_state} to {x_q_values[x_last_state][(row1, col1)] + x_learning_rate * (1 - x_q_values[x_last_state][(row1, col1)])}")
             x_q_values[x_last_state][(row1, col1)] = x_q_values[x_last_state][(row1, col1)] + x_learning_rate * (
                         1 - x_q_values[x_last_state][(row1, col1)])
-            # print(
-            #     f"UPDATING O {last_state} to {q_values[last_state][(row, col)] + learning_rate * (reward - q_values[last_state][(row, col)])}")
             q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
                         reward - q_values[last_state][(row, col)])
             loss_count += 1
         elif winner == "O":
             reward = 1
-            # print(f"O won, reward {reward}")
-            # print(
-            #     f"UPDATING X {x_last_state} to {x_q_values[x_last_state][(row1, col1)] + x_learning_rate * (-1 - x_q_values[x_last_state][(row1, col1)])}")
             x_q_values[x_last_state][(row1, col1)] = x_q_values[x_last_state][(row1, col1)] + x_learning_rate * (
                         -1 - x_q_values[x_last_state][(row1, col1)])
-            # print(
-            #     f"UPDATING O {last_state} to {q_values[last_state][(row, col)] + learning_rate * (reward - q_values[last_state][(row, col)])}")
             q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
                         reward - q_values[last_state][(row, col)])
             win_count += 1
         else:
             reward = 0
-            # print(f"draw, reward {reward}")
-            # print(
-            #     f"UPDATING X {x_last_state} to {x_q_values[x_last_state][(row1, col1)] + x_learning_rate * (0 - x_q_values[x_last_state][(row1, col1)])}")
             x_q_values[x_last_state][(row1, col1)] = x_q_values[x_last_state][(row1, col1)] + x_learning_rate * (
                         0 - x_q_values[x_last_state][(row1, col1)])
-            # print(
-            #     f"UPDATING O {last_state} to {q_values[last_state][(row, col)] + learning_rate * (reward - q_values[last_state][(row, col)])}")
             q_values[last_state][(row, col)] = q_values[last_state][(row, col)] + learning_rate * (
                         reward - q_values[last_state][(row, col)])
             stalemate_count += 1
@@ -500,6 +415,7 @@ while count < max_episodes:
         game_finished = True
         # 0.9999 Seems to yield the best results
         epsilon_greedy = max(epsilon_greedy * 0.99, 0.05)
+        x_epsilon_greedy = max(x_epsilon_greedy * 0.99, 0.05)
         count += 1
         pbar.update(1)
         # if count % 100 == 0:
@@ -515,10 +431,7 @@ while count < max_episodes:
         #     print(f'Stalemate: {stalemate_count}')
         #     print(f'Current epsilon value: {epsilon_greedy}')
         #     print(f'Win rate is {current_win_rate * 100}%')
-print("O Q-Table")
-print_q_value(q_values)
-print("X Q-Table")
-print_q_value(x_q_values)
+
 pbar.close()
 
 print(f'=========== Training Results ===========')
@@ -689,6 +602,7 @@ while True:
                 game_finished = True
                 # 0.9999 Seems to yield the best results
                 epsilon_greedy = max(epsilon_greedy * 0.93, 0.1)
+                x_epsilon_greedy = max(x_epsilon_greedy * 0.93, 0.1)
                 play_count += 1
                 win_rate = play_win_count / play_count
                 win_rate_history.append(win_rate)
